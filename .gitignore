@@ -1,0 +1,22 @@
+# Python
+backend/venv/
+backend/__pycache__/
+*.pyc
+
+# Environment Variables
+backend/.env
+
+# Test files
+backend/test.py
+backend/simple_test.py
+
+# Node
+node_modules/
+dist/
+
+# VS Code
+.vscode/
+
+# Operating System
+.DS_Store
+Thumbs.db
