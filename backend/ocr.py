@@ -1,32 +1,44 @@
-import easyocr
 from io import BytesIO
 from PIL import Image
+import pytesseract
+import cv2
 import numpy as np
 
-# Initialize reader (load once)
-reader = easyocr.Reader(['en'], gpu=False)
+import platform
+
+if platform.system() == "Windows":
+    pytesseract.pytesseract.tesseract_cmd = (
+        r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+    )
+else:
+    pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 
 def extract_text_from_image(image_bytes: bytes) -> str:
     """
-    Extract text from image bytes using EasyOCR.
-    
-    Args:
-        image_bytes: Image data as bytes
-        
-    Returns:
-        Extracted text as string
+    Extract text from image bytes using Tesseract OCR.
     """
-    # Convert bytes to PIL Image
-    image = Image.open(BytesIO(image_bytes))
-    
-    # Convert PIL Image to numpy array
+
+    image = Image.open(BytesIO(image_bytes)).convert("RGB")
+
     image_np = np.array(image)
-    
-    # Extract text using EasyOCR
-    results = reader.readtext(image_np)
-    
-    # Combine all detected text
-    text_lines = [result[1] for result in results]
-    extracted_text = '\n'.join(text_lines)
-    
-    return extracted_text
+
+    # Convert to grayscale
+    gray = cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY)
+
+    # Reduce noise
+    gray = cv2.GaussianBlur(gray, (3, 3), 0)
+
+    # Improve text visibility
+    _, thresh = cv2.threshold(
+        gray,
+        0,
+        255,
+        cv2.THRESH_BINARY + cv2.THRESH_OTSU
+    )
+
+    text = pytesseract.image_to_string(
+        thresh,
+        config="--oem 3 --psm 6"
+    )
+
+    return text.strip()
