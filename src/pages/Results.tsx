@@ -126,7 +126,7 @@ const Results = () => {
 
           {data.red_flags?.length > 0 ? (
             <ul className="space-y-3">
-              {data.red_flags.map((flag, index) => (
+              {data.red_flags.map((flag: string, index: number) => (
                 <li key={index}>
                   • {flag}
                 </li>
@@ -149,7 +149,7 @@ const Results = () => {
 
           {data.green_flags?.length > 0 ? (
             <ul className="space-y-3">
-              {data.green_flags.map((flag, index) => (
+              {data.green_flags.map((flag: string, index: number) => (
                 <li key={index}>
                   • {flag}
                 </li>
