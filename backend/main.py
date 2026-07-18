@@ -37,7 +37,7 @@ async def health_check():
 
 @app.get("/check-key")
 async def check_key():
-    key = os.getenv("GEMINI_API_KEY")
+    key = os.getenv("GROQ_API_KEY")
 
     return {
         "exists": key is not None,
@@ -76,9 +76,11 @@ async def analyze_screenshot(file: UploadFile = File(...)):
 if __name__ == "__main__":
     import uvicorn
 
+    port = int(os.getenv("PORT", 8000))
+
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8000,
+        port=port,
         reload=True,
     )

@@ -6,9 +6,6 @@ from ocr import extract_text_from_image
 
 load_dotenv()
 
-import os
-from groq import Groq
-
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 
