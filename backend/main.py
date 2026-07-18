@@ -6,7 +6,7 @@ load_dotenv()
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Dict
-from ocr import extract_text_from_image
+
 from analyzer import analyze_conversation
 
 app = FastAPI(title="HeartMirror AI Backend")
@@ -46,37 +46,18 @@ async def check_key():
 
 
 @app.post("/analyze")
-async def analyze_screenshot(file: UploadFile = File(...)) -> Dict:
+async def analyze_screenshot(file: UploadFile = File(...)):
     try:
-        # Validate uploaded file
+
         if not file.content_type.startswith("image/"):
             raise HTTPException(
                 status_code=400,
-                detail="File must be an image"
+                detail="Please upload an image."
             )
 
-        # Read image
         image_bytes = await file.read()
 
-        # OCR
-        extracted_text = extract_text_from_image(image_bytes)
-
-        print("\n========== OCR TEXT ==========")
-        print(extracted_text)
-        print("==============================\n")
-
-        if not extracted_text or len(extracted_text.strip()) < 10:
-            raise HTTPException(
-                status_code=400,
-                detail="Could not extract enough text from image."
-            )
-
-        # Gemini Analysis
-        analysis = analyze_conversation(extracted_text)
-
-        print("\n========== ANALYSIS ==========")
-        print(analysis)
-        print("==============================\n")
+        analysis = analyze_conversation(image_bytes)
 
         return analysis
 
@@ -91,7 +72,6 @@ async def analyze_screenshot(file: UploadFile = File(...)) -> Dict:
             status_code=500,
             detail=str(e)
         )
-
 
 if __name__ == "__main__":
     import uvicorn
