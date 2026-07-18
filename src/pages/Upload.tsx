@@ -49,7 +49,10 @@ const Upload = () => {
   }
 
   const handleAnalyze = async () => {
-    if (!uploadedFile) return
+    if (!uploadedFile) {
+      alert("Please select an image first.")
+      return
+    }
 
     setLoading(true)
 
@@ -58,7 +61,7 @@ const Upload = () => {
       formData.append('file', uploadedFile)
 
       const response = await fetch(
-        "https://heartmirror-ai.onrender.com/analyze",
+        "http://127.0.0.1:8000/analyze",
         {
           method: 'POST',
           body: formData,
@@ -67,6 +70,23 @@ const Upload = () => {
 
       const data = await response.json()
 
+      console.log("Backend Response:", data)
+
+      if (!response.ok) {
+        alert(data.detail || "Analysis failed. Please try again.")
+        return
+      }
+
+      // Validate expected response
+      if (
+        data.relationship_score === undefined ||
+        data.interest_level === undefined ||
+        data.sentiment === undefined
+      ) {
+        alert("Invalid response received from server.")
+        return
+      }
+
       localStorage.setItem(
         'analysis_result',
         JSON.stringify(data)
@@ -74,8 +94,8 @@ const Upload = () => {
 
       navigate('/results')
     } catch (error) {
-      console.error(error)
-      alert('Analysis failed')
+      console.error("Upload Error:", error)
+      alert("Unable to connect to the server.")
     } finally {
       setLoading(false)
     }
@@ -127,7 +147,7 @@ const Upload = () => {
             className="glass rounded-xl p-4 border border-cyan-500/30"
           >
             <p className="font-medium text-cyan-400">
-              Processing conversation with Gemini AI...
+              Processing conversation with AI...
             </p>
           </motion.div>
 

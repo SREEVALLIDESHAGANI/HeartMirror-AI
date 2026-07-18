@@ -1,37 +1,51 @@
 import os
 import json
-from io import BytesIO
-
 from dotenv import load_dotenv
-from PIL import Image
-import google.generativeai as genai
+from groq import Groq
+from ocr import extract_text_from_image
 
 load_dotenv()
 
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+import os
+from groq import Groq
 
-model = genai.GenerativeModel("gemini-2.0-flash")
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 
 def analyze_conversation(image_bytes: bytes):
-    image = Image.open(BytesIO(image_bytes))
+    # Extract text from image using OCR
+    extracted_text = extract_text_from_image(image_bytes)
+    
+    print("Extracted text:", extracted_text)
+    
+    if not extracted_text or len(extracted_text.strip()) < 10:
+        return {
+            "sentiment": "Unknown",
+            "relationship_score": 0,
+            "interest_level": 0,
+            "communication_style": "Unable to analyze - insufficient text extracted from image",
+            "red_flags": ["No text detected in image"],
+            "green_flags": [],
+            "summary": "Please upload a clearer image with readable text."
+        }
 
-    prompt = """
+    prompt = f"""
 You are an expert AI relationship analyst.
 
-The uploaded image is a screenshot of a chat conversation.
+Here is a conversation extracted from a chat screenshot:
+
+{extracted_text}
 
 Your tasks:
-1. Read the entire conversation from the image.
-2. Analyze the relationship.
-3. Return ONLY valid JSON.
+1. Analyze the relationship dynamics from this conversation.
+2. Return ONLY valid JSON.
 
 Format:
 
-{
-  "sentiment":"Positive",
-  "relationship_score":85,
-  "interest_level":80,
+{{
+  "sentiment":"Positive/Negative/Neutral",
+  "relationship_score":0-100,
+  "interest_level":0-100,
   "communication_style":"...",
   "red_flags":[
     "...",
@@ -42,22 +56,45 @@ Format:
     "..."
   ],
   "summary":"..."
-}
+}}
 
 Rules:
 - Return ONLY JSON.
 - No markdown.
 - No ```json.
 - No explanation.
+- relationship_score and interest_level must be numbers (0-100)
 """
 
-    response = model.generate_content([prompt, image])
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.5,
+        max_tokens=1024,
+    )
 
-    result = response.text.strip()
+    result = response.choices[0].message.content.strip()
 
     if result.startswith("```"):
         result = result.replace("```json", "").replace("```", "").strip()
 
-    print(result)
+    print("Analysis result:", result)
 
-    return json.loads(result)
+    try:
+        return json.loads(result)
+    except json.JSONDecodeError:
+        # Fallback if JSON parsing fails
+        return {
+            "sentiment": "Unknown",
+            "relationship_score": 50,
+            "interest_level": 50,
+            "communication_style": "Analysis failed - please try again",
+            "red_flags": ["AI analysis error"],
+            "green_flags": [],
+            "summary": result
+        }
