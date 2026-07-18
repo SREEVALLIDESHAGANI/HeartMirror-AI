@@ -61,7 +61,7 @@ const Upload = () => {
       formData.append('file', uploadedFile)
 
       const response = await fetch(
-        "https://heartmirror-ai.onrender.com/analyze",
+        "https://heartmirror-ai-1.onrender.com/analyze",
         {
           method: 'POST',
           body: formData,
